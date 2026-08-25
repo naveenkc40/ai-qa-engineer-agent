@@ -1,0 +1,32 @@
+{
+  "run_id": "<generated-at-runtime>",
+  "requirement": "As a shopper, I want to add Sauce Labs Backpack to my cart so that I can purchase it later.",
+  "requirement_analysis": "See requirement_analysis.json",
+  "application_discovery_status": "authenticated_context_valid",
+  "generated_tests": [
+    "See grounded_generated_test.json"
+  ],
+  "skipped_tests": [],
+  "execution_results": [
+    "See execution_result.json"
+  ],
+  "rca_results": [],
+  "overall_status": "PASSED",
+  "started_at": "<runtime UTC timestamp>",
+  "completed_at": "<runtime UTC timestamp>",
+  "duration_seconds": null,
+  "metrics": {
+    "requirement_analysis_latency_seconds": null,
+    "generation_latency_seconds": null,
+    "execution_duration_seconds": null,
+    "rca_latency_seconds": null,
+    "grounding_success_rate": null,
+    "generated_to_skipped_ratio": null,
+    "generated_count": 1,
+    "skipped_count": 0,
+    "passed_count": 1,
+    "failed_count": 0,
+    "error_count": 0
+  },
+  "example_note": "Null timing and rate fields are deliberate: only a real workflow run may populate measured metrics."
+}

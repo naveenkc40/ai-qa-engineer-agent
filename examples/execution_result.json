@@ -1,0 +1,13 @@
+{
+  "test_file": "tests/generated/test_grounded_add_to_cart.py",
+  "status": "passed",
+  "exit_code": 0,
+  "duration_seconds": null,
+  "stdout": "<pytest output from the measured run>",
+  "stderr": "",
+  "failed_test_names": [],
+  "artifacts": [
+    "<run-directory>/executions/test-001/execution_result.json"
+  ],
+  "example_note": "Duration is intentionally null because this is a documentation example, not a measured run."
+}

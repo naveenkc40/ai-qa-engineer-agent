@@ -1,0 +1,14 @@
+{
+  "status": "generated",
+  "filename": "test_grounded_add_to_cart.py",
+  "test_name": "test_add_backpack_to_cart",
+  "code": "import pytest\nfrom playwright.async_api import Page, expect\n\n@pytest.mark.asyncio\nasync def test_add_backpack_to_cart(page: Page):\n    await page.goto(\"https://www.saucedemo.com/inventory.html\")\n    add_button = page.locator(\"[data-test='add-to-cart-sauce-labs-backpack']\")\n    await expect(add_button).to_be_visible()\n    await expect(add_button).to_be_enabled()\n    await add_button.click()\n",
+  "grounded": true,
+  "evidence_used": [
+    "page.url=https://www.saucedemo.com/inventory.html",
+    "products[0].name=Sauce Labs Backpack",
+    "products[0].add_to_cart=True",
+    "products[0].add_to_cart_data_test=add-to-cart-sauce-labs-backpack"
+  ],
+  "missing_evidence": []
+}

@@ -1,0 +1,18 @@
+{
+  "feature": "Shopping cart",
+  "summary": "Allow a shopper to add the Sauce Labs Backpack from inventory to the cart.",
+  "scenarios": [
+    {
+      "id": "CART-001",
+      "title": "Add Sauce Labs Backpack to cart",
+      "description": "Add the named product from the inventory page.",
+      "scenario_type": "positive",
+      "priority": "high",
+      "steps": [
+        "Open the inventory page",
+        "Activate Add to cart for Sauce Labs Backpack"
+      ],
+      "expected_result": "The evidenced add-to-cart action completes"
+    }
+  ]
+}

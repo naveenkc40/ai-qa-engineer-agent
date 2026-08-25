@@ -1,0 +1,20 @@
+{
+  "classification": "locator_failure",
+  "summary": "Example structure for a failed execution; this is not the passing execution_result.json above.",
+  "probable_root_cause": "The execution output reported that the evidenced locator did not resolve.",
+  "confidence": null,
+  "evidence": [
+    "<exact failure output from a real execution would be inserted here>"
+  ],
+  "missing_evidence": [
+    "screenshots unavailable",
+    "traces unavailable"
+  ],
+  "affected_layer": "test/application boundary",
+  "recommended_action": "Inspect a fresh application map and the retained execution artifacts before changing the test.",
+  "retry_recommended": false,
+  "likely_test_defect": false,
+  "likely_application_defect": false,
+  "likely_infrastructure_defect": false,
+  "example_note": "Confidence is intentionally null because no real failed execution was analyzed."
+}

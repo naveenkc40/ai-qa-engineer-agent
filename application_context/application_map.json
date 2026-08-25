@@ -1,0 +1,54 @@
+{
+  "application": "nopCommerce Demo",
+  "base_url": "https://www.saucedemo.com/",
+  "title": "Swag Labs",
+  "current_url": "https://www.saucedemo.com/",
+  "links": [],
+  "buttons": [
+    {
+      "text": "",
+      "aria_label": null,
+      "type": "submit"
+    }
+  ],
+  "inputs": [
+    {
+      "type": "text",
+      "name": "user-name",
+      "id": "user-name",
+      "placeholder": "Username",
+      "aria_label": null,
+      "data_testid": null
+    },
+    {
+      "type": "password",
+      "name": "password",
+      "id": "password",
+      "placeholder": "Password",
+      "aria_label": null,
+      "data_testid": null
+    },
+    {
+      "type": "submit",
+      "name": "login-button",
+      "id": "login-button",
+      "placeholder": null,
+      "aria_label": null,
+      "data_testid": null
+    }
+  ],
+  "test_ids": [],
+  "network_requests": [
+    {
+      "method": "POST",
+      "url": "https://events.backtrace.io/api/unique-events/submit?universe=UNIVERSE&token=TOKEN",
+      "resource_type": "fetch"
+    },
+    {
+      "method": "POST",
+      "url": "https://events.backtrace.io/api/summed-events/submit?universe=UNIVERSE&token=TOKEN",
+      "resource_type": "fetch"
+    }
+  ],
+  "aria_snapshot": "- generic [ref=e3]:\n  - generic [ref=e4]: Swag Labs\n  - generic [ref=e5]:\n    - generic [ref=e9]:\n      - textbox \"Username\" [ref=e11]\n      - textbox \"Password\" [ref=e13]\n      - button \"Login\" [ref=e15] [cursor=pointer]\n    - generic [ref=e17]:\n      - generic [ref=e18]:\n        - heading \"Accepted usernames are:\" [level=4] [ref=e19]\n        - text: standard_userlocked_out_userproblem_userperformance_glitch_usererror_uservisual_user\n      - generic [ref=e20]:\n        - heading \"Password for all users:\" [level=4] [ref=e21]\n        - text: secret_sauce"
+}
