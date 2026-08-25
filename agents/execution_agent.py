@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import subprocess
@@ -72,7 +71,10 @@ class ExecutionAgent:
         environment = os.environ.copy()
         environment["EXECUTION_ARTIFACT_DIR"] = str(artifact_dir)
         command = [
-            str(self.python), "-m", "pytest", str(test_file), "-q",
+            # pytest.ini excludes generated/external tests from normal quality
+            # gates. This is the explicit, grounded execution path, so override
+            # that default selection for the single accepted test file.
+            str(self.python), "-m", "pytest", str(test_file), "-q", "-m", "generated",
         ]
         started = time.monotonic()
         try:

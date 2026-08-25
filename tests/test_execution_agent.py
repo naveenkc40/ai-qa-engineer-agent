@@ -26,15 +26,22 @@ def make_project(tmp_path):
 
 def test_passed_execution(tmp_path, monkeypatch):
     agent = make_project(tmp_path)
-    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: subprocess.CompletedProcess(
-        args[0], 0, stdout="1 passed in 0.10s\n", stderr=""
-    ))
+    observed = {}
+
+    def run(command, **kwargs):
+        observed["command"] = command
+        return subprocess.CompletedProcess(
+            command, 0, stdout="1 passed in 0.10s\n", stderr=""
+        )
+
+    monkeypatch.setattr(subprocess, "run", run)
 
     result = agent.execute(generated(), run_id="pass-run")
 
     assert result.status == "passed"
     assert result.exit_code == 0
     assert result.failed_test_names == []
+    assert observed["command"][-2:] == ["-m", "generated"]
     assert any(path.endswith("execution_result.json") for path in result.artifacts)
 
 

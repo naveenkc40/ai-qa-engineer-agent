@@ -11,7 +11,7 @@
 
 “LLMs write plausible UI tests, but plausible selectors and diagnoses are not safe. This project separates reasoning from observation and adds deterministic gates before generated code can execute.”
 
-Show the README architecture diagram and point out the sequence from requirement analysis to final report.
+Show the README architecture summary, then open [`architecture.md`](architecture.md) and point out the sequence from requirement analysis to final report.
 
 ## 0:45–1:30 — Show the evidence boundary
 
@@ -55,6 +55,6 @@ Mention that screenshots and traces are collected best-effort on failed browser 
 
 ## 4:20–5:00 — Close with engineering judgment
 
-State the honest limitations: discovery is SauceDemo-specific, grounding is literal-pattern based rather than full semantic verification, authenticated state is not yet restored by the execution fixture, and model-assisted RCA requires human confirmation.
+State the honest limitations: discovery is SauceDemo-specific, grounding is literal-pattern based rather than full semantic verification, stored authenticated sessions can expire, and model-assisted RCA requires human confirmation.
 
-Close with the next engineering steps: pluggable discovery adapters, authenticated execution, AST-based validation, schema versioning, and artifact redaction/retention.
+Close with the next engineering steps: pluggable discovery adapters, explicit unauthenticated-scenario support, AST-based validation, schema versioning, and artifact redaction/retention.

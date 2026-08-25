@@ -1,0 +1,61 @@
+name: Docker validation
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Prepare test results directory
+        run: mkdir -p docker-test-results
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ai-qe-agent:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Ruff in Docker
+        run: docker run --rm ai-qe-agent:${{ github.sha }} ruff check .
+
+      - name: Run deterministic pytest suite in Docker
+        run: |
+          docker run --rm \
+            --mount type=bind,source="${{ github.workspace }}/docker-test-results",target=/test-results \
+            ai-qe-agent:${{ github.sha }} \
+            python -m pytest \
+              --junitxml=/test-results/junit.xml \
+              --cov=agents \
+              --cov=tools \
+              --cov-report=term-missing \
+              --cov-report=xml:/test-results/coverage.xml
+
+      - name: Upload Docker test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-test-evidence-${{ github.sha }}
+          path: docker-test-results/
+          if-no-files-found: warn

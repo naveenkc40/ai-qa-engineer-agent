@@ -134,7 +134,52 @@ async def test_add_backpack_to_cart(page: Page):
     assert result.code == code
 
 
-def test_generates_complete_backpack_flow_from_stateful_evidence():
+def test_generates_complete_backpack_flow_from_stateful_evidence(tmp_path):
+    map_path = tmp_path / "map.json"
+    map_path.write_text(json.dumps({
+        "authenticated": True,
+        "base_url": "https://www.saucedemo.com",
+        "page": {"url": "https://www.saucedemo.com/inventory.html"},
+        "products": [{"name": "Sauce Labs Backpack"}],
+        "cart": {"cart_href": None},
+        "flows": {"add_backpack_to_cart": {
+            "preconditions": {
+                "inventory_url": "https://www.saucedemo.com/inventory.html",
+                "product_name": "Sauce Labs Backpack",
+                "product_locator": {
+                    "strategy": "data-test",
+                    "value": "[data-test='inventory-item-name']",
+                },
+            },
+            "action": {"locator": {
+                "strategy": "data-test",
+                "value": "[data-test='add-to-cart-sauce-labs-backpack']",
+            }},
+            "post_add_state": {
+                "shopping_cart_badge_locator": {
+                    "strategy": "data-test",
+                    "value": "[data-test='shopping-cart-badge']",
+                },
+                "badge_text": "1",
+                "shopping_cart_link_locator": {
+                    "strategy": "data-test",
+                    "value": "[data-test='shopping-cart-link']",
+                },
+            },
+            "cart_page": {
+                "actual_url": "https://www.saucedemo.com/cart.html",
+                "backpack_locator": {
+                    "strategy": "data-test",
+                    "value": "[data-test='inventory-item-name']",
+                },
+                "quantity_locator": {
+                    "strategy": "data-test",
+                    "value": "[data-test='item-quantity']",
+                },
+                "quantity_text": "1",
+            },
+        }},
+    }), encoding="utf-8")
     code = """import pytest
 from playwright.async_api import Page, expect
 
@@ -169,7 +214,7 @@ async def test_add_backpack_to_cart(page: Page):
         "missing_evidence": [],
     })
 
-    result = GenerationAgent(client=client).generate(scenario())
+    result = GenerationAgent(map_path, client=client).generate(scenario())
 
     prompt = client.models.generate_content.call_args.kwargs["contents"]
     assert '"add_backpack_to_cart"' in prompt

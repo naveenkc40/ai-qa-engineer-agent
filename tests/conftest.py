@@ -8,6 +8,15 @@ import pytest_asyncio
 from playwright.async_api import async_playwright
 
 
+def pytest_collection_modifyitems(items):
+    """Classify generated browser tests without modifying generated files."""
+    for item in items:
+        if "generated" in Path(item.path).parts:
+            item.add_marker(pytest.mark.generated)
+            item.add_marker(pytest.mark.e2e)
+            item.add_marker(pytest.mark.external)
+
+
 class AuthenticationSetupError(RuntimeError):
     """The generated-test browser context cannot restore authentication."""
 
