@@ -1,63 +1,85 @@
-# AI QA Engineer Agent — Evidence-Grounded Autonomous Quality Engineering
+# Evidence-Grounded Agentic Quality Engineering Platform
 
-An agentic QA platform that converts natural-language requirements into evidence-grounded Playwright tests, executes them in authenticated browser sessions, and performs structured RCA for failures—while refusing to invent unsupported URLs, selectors, or application states.
+An agentic quality engineering platform that turns natural-language requirements into evidence-grounded Playwright tests, executes only deterministically accepted output, and carries runtime evidence into structured root-cause analysis (RCA).
 
-This is a portfolio project, not a claim that an LLM can replace QA judgment. Its focus is the engineering boundary between probabilistic reasoning and deterministic validation.
+[![CI](https://github.com/naveenkc40/ai-qa-engineer-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/naveenkc40/ai-qa-engineer-agent/actions/workflows/ci.yml)
+[![Docker validation](https://github.com/naveenkc40/ai-qa-engineer-agent/actions/workflows/docker.yml/badge.svg)](https://github.com/naveenkc40/ai-qa-engineer-agent/actions/workflows/docker.yml)
+[![Python 3.10–3.12](https://img.shields.io/badge/python-3.10%E2%80%933.12-3776AB?logo=python&logoColor=white)](https://github.com/naveenkc40/ai-qa-engineer-agent/blob/main/.github/workflows/ci.yml)
+[![Playwright 1.62.0](https://img.shields.io/badge/Playwright-1.62.0-2EAD33?logo=playwright&logoColor=white)](https://github.com/naveenkc40/ai-qa-engineer-agent/blob/main/requirements.txt)
 
-## Problem statement
+This portfolio project explores the engineering boundary between probabilistic AI reasoning, deterministic validation, and browser/runtime evidence. It does not claim that an LLM replaces quality-engineering judgment.
 
-LLMs can draft tests quickly, but plausible-looking selectors, routes, states, and diagnoses are unsafe in an automation pipeline. This project addresses that problem by discovering the authenticated application first, constraining generation to that evidence, rejecting unsupported output in code, and carrying execution artifacts into RCA.
+## Problem being solved
+
+LLMs can draft plausible tests quickly, but plausible selectors, routes, application states, and diagnoses are unsafe in an automation pipeline. This project observes an authenticated application first, constrains generation to that evidence, rejects unsupported output in code, and retains execution artifacts for evidence-bounded RCA.
+
+## Key capabilities
+
+- Converts requirements into structured, independently executable scenarios.
+- Authenticates through Playwright with environment-provided credentials and saves runtime-only browser state.
+- Discovers observed pages, products, controls, locator candidates, ARIA data, and network resources.
+- Gives test generation only scenario-relevant application evidence and exact citation references.
+- Rejects unsupported URLs, selectors, test IDs, role/name pairs, labels, filenames, or evidence citations before execution.
+- Runs accepted tests in isolated pytest subprocesses and retains stdout, stderr, screenshots, traces, and browser errors when available.
+- Applies deterministic failure classification before optional evidence-bounded model analysis.
+- Persists per-run reports, outcomes, measured durations, and grounding counts.
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    R[RequirementAgent] --> A[Authentication]
-    A --> D[ApplicationDiscovery]
-    D --> G[TestGeneration]
-    G --> E[Execution]
-    E --> C[RCA]
-    C --> F[Final Report]
+`QAOrchestrator` coordinates six implemented specialist agents and persists the workflow result. The main evidence path is:
 
-    D -. authenticated application map .-> G
-    G -. grounded tests only .-> E
-    E -. stdout, stderr, trace, screenshot .-> C
+```text
+Requirement → RequirementAgent → AuthenticationAgent → ApplicationDiscoveryAgent
+            → evidence/application map → TestGenerationAgent
+            → deterministic grounding gate → ExecutionAgent → Playwright/pytest evidence
+            → RCAAgent → final report
 ```
 
-`QAOrchestrator` owns sequencing and persistence. Each specialist owns one decision boundary:
+See [Architecture](docs/architecture.md) for the Mermaid diagram, trust boundaries, contracts, and failure behavior.
 
-| Component | Responsibility |
+## Evidence grounding and hallucination control
+
+Discovery writes an authenticated application map. Generation receives only the scenario-relevant subset and must cite exact `path=value` entries from a generated evidence catalog. A deterministic post-generation gate rejects invented URLs, selectors, test IDs, role/name pairs, labels, unsafe filenames, missing code, and unknown citations. Rejected scenarios become `cannot_generate` results and are never executed.
+
+Grounded means supported by the captured map and implemented literal checks—not proof of functional correctness in every application state. The current gate is not a complete Python semantic verifier.
+
+RCA consumes pytest output and available browser artifacts. Known setup and browser failures are classified without an LLM. Other failures are pre-classified before model analysis; the returned classification is restored deterministically, and missing evidence is reported explicitly. RCA is advisory and should be confirmed by a human.
+
+## Agent responsibilities
+
+| Component | Implemented responsibility |
 |---|---|
-| `RequirementAgent` | Convert the user story into structured, independently executable scenarios. |
-| `AuthenticationAgent` | Log in with environment-provided credentials and save Playwright `storage_state`. |
-| `ApplicationDiscoveryAgent` | Reopen the authenticated session and record observed pages, products, controls, locators, ARIA, and network evidence. |
-| `TestGenerationAgent` | Generate a test or explicitly return `cannot_generate`; validate every cited fact and supported literal. |
-| `ExecutionAgent` | Run only grounded tests in isolated pytest processes and retain outputs/artifacts. |
-| `RCAAgent` | Deterministically classify known failures, then use the model only for evidence-bounded analysis where needed. |
-| `QAOrchestrator` | Coordinate stages, continue across individual scenario failures, calculate run metrics, and write the final report. |
+| `RequirementAgent` | Convert requirement prose into schema-constrained scenarios. |
+| `AuthenticationAgent` | Log in and save Playwright `storage_state` using environment credentials. |
+| `ApplicationDiscoveryAgent` | Reopen the authenticated session and collect application and stateful-flow evidence. |
+| `TestGenerationAgent` | Draft a test or return `cannot_generate`, then validate cited facts and supported literals. |
+| `ExecutionAgent` | Permit only grounded generated results, run pytest in isolation, and retain execution evidence. |
+| `RCAAgent` | Deterministically classify known failures and bound optional model analysis to supplied evidence. |
+| `QAOrchestrator` | Sequence stages, continue independent scenarios, calculate run metrics, and write reports. |
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the detailed contracts.
+## End-to-end workflow
 
-## Evidence grounding and safety
+1. The user enters a requirement; `RequirementAgent` derives structured scenarios.
+2. The orchestrator reuses a valid authenticated map or invokes authentication and discovery.
+3. `TestGenerationAgent` selects relevant evidence and asks Gemini for schema-constrained output.
+4. The deterministic grounding gate accepts the test or records why it cannot be generated.
+5. `ExecutionAgent` runs each accepted test in a separate pytest process.
+6. `RCAAgent` analyzes every failed/error result from retained evidence.
+7. The orchestrator writes `workflow_result.json` and `final_report.json` under `reports/runs/<run-id>/`.
 
-Discovery writes an authenticated application map. Generation receives only scenario-relevant parts of that map and must cite exact `path=value` evidence references. A deterministic post-generation check rejects invented URLs, selectors, test IDs, role/name pairs, labels, invalid filenames, missing code, or absent citations. Rejected scenarios are recorded as skipped and never executed.
+## Quick start
 
-RCA uses pytest output and available artifacts. Known setup/browser classes are handled without an LLM. Other failures are pre-classified and the model is instructed to preserve that classification, use only supplied evidence, and enumerate missing evidence. This reduces hallucination risk; it does not eliminate it, so RCA remains advisory.
-
-Credentials are read from environment variables, are not included in prompts or reports, and `.env` plus `storage_state` are ignored by Git.
-
-## Setup
-
-Prerequisites: Python 3.10+ and a Chromium-compatible host.
+Prerequisites: Python 3.10 or newer and a Chromium-compatible host.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install -r requirements.txt -r requirements-dev.txt
 python -m playwright install chromium
+cp .env.example .env
 ```
 
-Create a local `.env` (never commit it):
+Configure `.env` with a Gemini key, target URL, and credentials for a disposable test account:
 
 ```dotenv
 GEMINI_API_KEY=your_key
@@ -66,85 +88,100 @@ QA_USERNAME=your_username
 QA_PASSWORD=your_password
 ```
 
-The checked-in discovery code is currently tailored to SauceDemo's inventory DOM. On the first run, authentication creates `application_context/storage_state.json`; discovery then creates the authenticated map. A valid existing map may be reused.
-
-## CLI usage
+Then run:
 
 ```bash
-source .venv/bin/activate
 python app.py
 ```
 
-Enter a requirement when prompted. The CLI prints counts, measured metrics, overall status, and the report location. Complete run data is written beneath `reports/runs/<run-id>/`.
+Enter a multiline requirement and type `END` on its own line. The current discovery implementation is tailored to SauceDemo's inventory DOM. A valid checked-in application map can be reused; otherwise authentication creates local `application_context/storage_state.json` before discovery.
 
-To run the repository tests:
+The checked-in [examples](examples/) follow a sample cart requirement through analysis, grounding, execution, RCA, and reporting. Example metric fields are deliberately `null` where they are not measurements from a recorded run.
+
+## Docker execution
+
+The image uses Microsoft's Playwright Python runtime matching Playwright 1.62.0 and installs runtime plus development dependencies.
 
 ```bash
+docker build -t ai-qe-agent .
+docker run --rm ai-qe-agent ruff check .
+docker run --rm ai-qe-agent python -m pytest
+```
+
+Running the live workflow requires supplying runtime environment values. Do not bake `.env`, API keys, credentials, or browser state into the image.
+
+## Testing
+
+The default pytest configuration deliberately excludes tests marked `generated` or `external`:
+
+```bash
+ruff check .
 python -m pytest
+python -m pytest --cov=agents --cov=tools --cov-report=term-missing
 ```
 
-## Sample user story
+Files under `tests/generated/` are collection-marked as generated, external, and end-to-end. Run them only in an explicitly prepared environment with a valid target application and authentication state; they are not part of the deterministic PR gate.
 
-> As a shopper, I want to add Sauce Labs Backpack to my cart so that I can purchase it later.
+## CI/CD
 
-The example set in [`examples/`](examples/) follows this story through analysis, grounding, execution, RCA, and reporting. The RCA example intentionally represents a failed run; it is separate from the passing execution example. Sample metric fields are `null` because examples are not measured runs.
+- [GitHub Actions CI](.github/workflows/ci.yml) runs Ruff and deterministic pytest with coverage on Python 3.10, 3.11, and 3.12, then uploads JUnit and coverage XML artifacts.
+- [Docker validation](.github/workflows/docker.yml) builds the image, runs Ruff and deterministic pytest inside it, and uploads container test evidence.
+- [Jenkinsfile](Jenkinsfile) provides native setup/static-analysis/tests, Docker build/container validation, and evidence publication stages.
 
-## Sample final report
+See [CI/CD design](docs/ci-cd.md) for gate boundaries and artifact details.
 
-```json
-{
-  "requirement": "As a shopper, I want to add Sauce Labs Backpack to my cart so that I can purchase it later.",
-  "application_discovery_status": "authenticated_context_valid",
-  "overall_status": "PASSED",
-  "metrics": {
-    "requirement_analysis_latency_seconds": null,
-    "generation_latency_seconds": null,
-    "execution_duration_seconds": null,
-    "rca_latency_seconds": null,
-    "grounding_success_rate": null,
-    "generated_to_skipped_ratio": null,
-    "generated_count": 1,
-    "skipped_count": 0,
-    "passed_count": 1,
-    "failed_count": 0,
-    "error_count": 0
-  }
-}
+## Security model
+
+- Credentials come from environment variables; authentication state is runtime-only.
+- `.env`, storage-state patterns, reports, browser traces, screenshots, logs, and coverage output are ignored from source control and the Docker build context.
+- Credentials are not intentionally added to generation prompts or workflow reports.
+- Application maps and browser artifacts can still contain sensitive observations and must be reviewed before sharing.
+- Generated code is not trusted solely because an LLM returned it; deterministic grounding status is required before execution.
+
+See [Security policy](SECURITY.md) for reporting guidance and handling rules.
+
+## Current verified metrics
+
+Verified locally on 2026-08-25 using the repository's default deterministic gate:
+
+| Metric | Verified value |
+|---|---:|
+| Deterministic tests | 53 passed |
+| Generated/external browser tests excluded by default | 9 deselected |
+| Configured coverage (`agents` + `tools`) | 60% |
+| GitHub Actions Python matrix | 3.10, 3.11, 3.12 |
+| Container runtime | Playwright/Python image, validated by a dedicated workflow |
+
+The test run collected 62 tests in total. These are repository validation facts, not benchmark, accuracy, adoption, productivity, or enterprise-usage claims.
+
+Per-workflow operational metrics are calculated rather than hard-coded: phase latency, summed execution duration, grounding success rate, generated-to-skipped ratio, and generated/skipped/passed/failed/error counts.
+
+## Repository structure
+
+```text
+.
+├── agents/                 # Specialist agents and orchestrator
+├── application_context/    # Application maps; runtime storage state is ignored
+├── docs/                   # Architecture, CI/CD, demo, and roadmap
+├── examples/               # Illustrative structured inputs and outputs
+├── tests/                  # Deterministic tests and isolated generated browser tests
+├── tools/                  # Supporting authentication, discovery, and file utilities
+├── .github/workflows/      # Python CI and Docker validation
+├── app.py                  # Interactive CLI entry point
+├── Dockerfile              # Reproducible Playwright/Python runtime
+├── Jenkinsfile             # Jenkins validation pipeline
+├── pytest.ini              # Default deterministic test selection
+└── pyproject.toml          # Ruff target configuration
 ```
-
-Real reports contain actual run timestamps, measured durations, full structured results, and calculated rates. `generated_to_skipped_ratio` is `null` when there are no skipped scenarios; rates are `null` when there is no denominator.
-
-## Metrics
-
-Metrics are computed per workflow run, never hard-coded:
-
-- requirement analysis, generation, and RCA wall-clock latency;
-- summed test execution duration reported by the execution agent;
-- grounding success rate: generated / (generated + skipped);
-- generated-to-skipped ratio, with a null value for a zero skipped denominator;
-- generated, skipped, passed, failed, and infrastructure/error counts.
-
-No benchmark, accuracy, coverage, or productivity claims are made.
-
-## Limitations
-
-- Application discovery is SauceDemo-specific rather than a general crawler.
-- Requirement analysis and most RCA require Gemini and can vary between calls.
-- Grounding validates known literal patterns; it is not a complete Python semantic verifier.
-- Browser evidence is best-effort. A browser crash can prevent screenshots or traces.
-- Stored sessions expire and must be regenerated.
-- Generated authenticated tests restore the validated `application_context/storage_state.json` session through the shared `page` fixture.
-- RCA suggests a probable cause; a human should confirm it before acting.
 
 ## Roadmap
 
-- Make discovery adapters pluggable for applications beyond SauceDemo.
-- Add explicit support for unauthenticated scenarios alongside the authenticated execution fixture.
-- Expand deterministic grounding with AST-based locator and assertion validation.
-- Add schema versioning and machine-readable metric definitions.
-- Add redaction checks and configurable artifact retention.
-- Add CI once tests can run without external credentials or live-browser assumptions.
+Implemented and planned capabilities are separated in [Roadmap](docs/roadmap.md). Planned items are proposals and are not represented as current functionality.
 
-## Repository status
+## Contributing
 
-Badges are intentionally omitted: the repository currently has no checked-in CI workflow, coverage publication, package release, or license metadata to back them.
+See [Contributing guide](CONTRIBUTING.md) for environment setup, branch/PR expectations, required validation, and secret-handling rules.
+
+## License
+
+No license file is currently present. Until the maintainers add one, the repository should not be assumed to grant open-source reuse rights; this is also why no license badge is shown.

@@ -100,7 +100,7 @@ async def main():
             )
 
         print(
-            f"✓ Authentication verified"
+            "✓ Authentication verified"
         )
 
         print(
